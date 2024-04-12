@@ -5,7 +5,7 @@
 
 # Load packages required to define the pipeline:
 library(targets)
-# library(tarchetypes) # Load other packages as needed. # nolint
+library(tarchetypes) # Load other packages as needed. # nolint
 
 # Set target options:
 tar_option_set(
@@ -32,21 +32,24 @@ list(
 # 1. Load data from API ---------------------------------------------------
 
   # Youth data
-  tar_target(
+  tar_force(
     dat_youth_raw,
     suppressMessages(redcap_read(
-      redcap_uri = youth_url,
-      token = youth_api_token
-    )$data)
+      redcap_uri = youth_url_qa,
+      token = youth_api_token_qa
+    )$data),
+    force = T
     ),
   
   # Caregiver data
-  tar_target(
+tar_force(
     dat_caregiver_raw,
     suppressMessages(redcap_read(
-      redcap_uri = caregiver_url,
-      token = caregiver_api_token
-    )$data)),
+      redcap_uri = caregiver_url_qa,
+      token = caregiver_api_token_qa
+    )$data),
+    force = T
+    ),
 
 
 # 2. Cleaning data --------------------------------------------------------
