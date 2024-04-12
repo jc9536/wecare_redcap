@@ -40,7 +40,8 @@ dat_t <- rbind(dat, dat) |>
 dat_t <- dat_t |> uncount(n)
 
 # set a random seed
-set.seed(02112024)
+set.seed(02112024) # for production
+# set.seed(03152024) # for development
 
 # Randomly shuffle rows within each stratum before sorting
 dat_t <- dat_t %>%
@@ -60,7 +61,8 @@ sapply(dat_t, table)
 dat_t |> group_by(site_id, screen_sex, over_18, cssrs_6a_b, treatment) |> summarise(n = n()) |> View()
 
 # Export randomization table
-write_csv(dat_t, "/Users/michaelfive/Library/CloudStorage/Box-Box/WeCare/Data/docs/random_allocation.csv")
+write_csv(dat_t, "/Users/michaelfive/Library/CloudStorage/Box-Box/WeCare/Data/docs/random_allocation_production.csv")
+#write_csv(dat_t, "/Users/michaelfive/Library/CloudStorage/Box-Box/WeCare/Data/docs/random_allocation_development.csv")
 
 # 2. Test randomization using the redcapAPI package --------
 
