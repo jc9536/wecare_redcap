@@ -23,7 +23,7 @@ clean_youth <- function(dat_youth_raw){
     # remove the original un-coalesced variables
     select(-matches("^(harlem|kings)_ps\\d{2}y.*")) |> 
     # coalesce prescreening contact form completion indicators
-    mutate(prescreening_contact_form_youth_complete = coalesce_columns(dat_youth_cleaned, ".*prescreening_contact_form.*", "complete")[,1],
+    mutate(contact_form_youth_complete = coalesce_columns(dat_youth_cleaned, ".*prescreening_contact_form.*", "complete")[,1],
            .before = first_name) |> 
     # remove the original un-coalesced variables
     select(-matches("prescreening_contact_form"))
@@ -45,7 +45,7 @@ clean_youth <- function(dat_youth_raw){
     ) |> 
     # remove the original un-coalesced variables
     select(-matches("^(harlem|kings)_icf\\d{2}y.*")) |> 
-    # coalesce prescreening contact form completion indicators
+    # coalesce ICF completion indicators
     mutate(informed_consent_form_youth_complete = coalesce_columns(dat_youth_cleaned, ".*subject_information_and_informed.*", "complete")[,1],
            .before = sw_pause_id) |> 
     # remove the original un-coalesced variables
@@ -55,7 +55,7 @@ clean_youth <- function(dat_youth_raw){
   # remove weird html tag
   dat_youth_cleaned <- dat_youth_cleaned |> 
     mutate(across(everything(), 
-                  ~ifelse(grepl("<!DOCTYPE HTML>", .x), 
+                  ~if_else(grepl("<!DOCTYPE HTML>", .x), 
                           NA, 
                           .x)))
   
@@ -94,7 +94,7 @@ clean_caregiver <- function(dat_caregiver_raw){
     select(-matches("^(harlem|kings)_ps\\d{2}.*")) |>
     
     # coalesce prescreening contact form completion indicators
-    mutate(prescreening_contact_form_parent_complete = coalesce_columns(dat_caregiver_cleaned, ".*prescreening_contact_form.*", "complete")[,1],
+    mutate(contact_form_parent_complete = coalesce_columns(dat_caregiver_cleaned, ".*prescreening_contact_form.*", "complete")[,1],
            .before = p_first_name) |> 
     # remove the original un-coalesced variables
     select(-matches("prescreening_contact_form"))
@@ -143,7 +143,7 @@ clean_caregiver <- function(dat_caregiver_raw){
     ) |> 
     # remove the original un-coalesced variables
     select(-matches("^(harlem|kings)_icf\\d{2}.*")) |> 
-    # coalesce prescreening contact form completion indicators
+    # coalesce ICF completion indicators
     mutate(informed_consent_form_parent_complete = coalesce_columns(dat_caregiver_cleaned, ".*subject_information_and_informed.*", "complete")[,1],
            .before = p_sw_pause_id) |> 
     # remove the original un-coalesced variables
@@ -161,7 +161,7 @@ clean_caregiver <- function(dat_caregiver_raw){
   # remove weird html tag
   dat_caregiver_cleaned <- dat_caregiver_cleaned |> 
     mutate(across(everything(), 
-                  ~ifelse(grepl("<!DOCTYPE HTML>", .x), 
+                  ~if_else(grepl("<!DOCTYPE HTML>", .x), 
                           NA, 
                           .x)))
   
