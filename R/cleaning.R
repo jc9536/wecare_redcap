@@ -9,6 +9,57 @@ clean_youth <- function(dat_youth_raw){
   dat_youth_cleaned <- dat_youth_raw |> 
     janitor::clean_names()
   
+  # coalesce pre-ICF variables
+  dat_youth_cleaned <- dat_youth_cleaned |> 
+    mutate(
+      ps_hear_more = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "hear_more")[,1],
+      ps_willing_to_contact = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "willing_to_contact")[,1],
+      ps_decline_reason = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "decline_reason")[,1],
+      ps_youth_name = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "youth_name")[,1],
+      ps_signature = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "signature")[,1],
+      ps_date = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "date")[,1],
+      .after = initial_questions_complete
+    ) |> 
+    # remove the original un-coalesced variables
+    select(-matches("^(harlem|kings)_ps\\d{2}y.*")) |> 
+    # coalesce prescreening contact form completion indicators
+    mutate(prescreening_contact_form_youth_complete = coalesce_columns(dat_youth_cleaned, ".*prescreening_contact_form.*", "complete")[,1],
+           .before = first_name) |> 
+    # remove the original un-coalesced variables
+    select(-matches("prescreening_contact_form"))
+  
+  # coalesce ICF variables
+  dat_youth_cleaned <- dat_youth_cleaned |> 
+    mutate(
+      icf_name_1 = coalesce_columns(dat_youth_cleaned, "icf[0-9]{2}y_", "name_1")[,1],
+      icf_name_2 = coalesce_columns(dat_youth_cleaned, "icf[0-9]{2}y_", "name_2")[,1],
+      icf_nih_share = coalesce_columns(dat_youth_cleaned, "icf[0-9]{2}y_", "nih_share")[,1],
+      icf_name_3 = coalesce_columns(dat_youth_cleaned, "icf[0-9]{2}y_", "name_3")[,1],
+      icf_nih_first_name = coalesce_columns(dat_youth_cleaned, "icf[0-9]{2}y_", "first_name")[,1],
+      icf_nih_middle_name = coalesce_columns(dat_youth_cleaned, "icf[0-9]{2}y_", "middle_name")[,1],
+      icf_nih_last_name = coalesce_columns(dat_youth_cleaned, "icf[0-9]{2}y_", "last_name")[,1],
+      icf_nih_dob = coalesce_columns(dat_youth_cleaned, "icf[0-9]{2}y_", "dob")[,1],
+      icf_nih_sex = coalesce_columns(dat_youth_cleaned, "icf[0-9]{2}y_", "sex")[,1],
+      icf_nih_city = coalesce_columns(dat_youth_cleaned, "icf[0-9]{2}y_", "city")[,1],
+      .after = eligibility_screen_complete
+    ) |> 
+    # remove the original un-coalesced variables
+    select(-matches("^(harlem|kings)_icf\\d{2}y.*")) |> 
+    # coalesce prescreening contact form completion indicators
+    mutate(informed_consent_form_youth_complete = coalesce_columns(dat_youth_cleaned, ".*subject_information_and_informed.*", "complete")[,1],
+           .before = sw_pause_id) |> 
+    # remove the original un-coalesced variables
+    select(-matches("subject_information_and_informed")) |> 
+    as_tibble()
+  
+  # remove weird html tag
+  dat_youth_cleaned <- dat_youth_cleaned |> 
+    mutate(across(everything(), 
+                  ~ifelse(grepl("<!DOCTYPE HTML>", .x), 
+                          NA, 
+                          .x)))
+  
+  
   return(dat_youth_cleaned)
 }
 
@@ -30,28 +81,20 @@ clean_caregiver <- function(dat_caregiver_raw){
     
     # coalesce prescreening contact form variables
     mutate(
-      ps_hear_more = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "hear_more")[,1],
-      ps_willing_to_contact = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "willing_to_contact")[,1],
-      ps_decline_reason = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "decline_reason")[,1],
-      ps_caregiver_name = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "caregiver_name")[,1],
-      ps_youth_name = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "youth_name")[,1],
-      ps_signature = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "signature")[,1],
-      ps_date = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "date")[,1],
+      p_ps_hear_more = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "hear_more")[,1],
+      p_ps_willing_to_contact = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "willing_to_contact")[,1],
+      p_ps_decline_reason = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "decline_reason")[,1],
+      p_ps_caregiver_name = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "caregiver_name")[,1],
+      p_ps_youth_name = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "youth_name")[,1],
+      p_ps_signature = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "signature")[,1],
+      p_ps_date = coalesce_columns(dat_caregiver_cleaned, "ps[0-9]{2}_", "date")[,1],
       .after = initial_questions_complete
     ) |> 
     # remove the original un-coalesced variables
-    select(-all_of(
-      grep(pattern = paste0("^(?!ps_).*(", 
-                            paste(c("hear_more", "willing_to_contact", "decline_reason", 
-                                    "caregiver_name", "youth_name", "signature", "date"), 
-                                  collapse = "|"), 
-                            ")"), 
-           names(dat_caregiver_cleaned), value = TRUE, perl = TRUE)
-      
-    )) |>
+    select(-matches("^(harlem|kings)_ps\\d{2}.*")) |>
     
     # coalesce prescreening contact form completion indicators
-    mutate(prescreening_contact_form_parent_complete = coalesce_columns(dat_caregiver_cleaned, ".*prescreening_contact_form.*", "complete"),
+    mutate(prescreening_contact_form_parent_complete = coalesce_columns(dat_caregiver_cleaned, ".*prescreening_contact_form.*", "complete")[,1],
            .before = p_first_name) |> 
     # remove the original un-coalesced variables
     select(-matches("prescreening_contact_form"))
@@ -81,31 +124,63 @@ clean_caregiver <- function(dat_caregiver_raw){
       kings_icf18_name_4_hai = kings_icf18_name_2_hai
     )
   
+  # coalesce ICF variables
   dat_caregiver_cleaned <- dat_caregiver_cleaned |> 
     mutate(
-      icf_name_1 = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "name_1")[,1],
-      icf_name_2 = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "name_2")[,1],
-      icf_name_3 = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "name_3")[,1],
-      icf_name_4 = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "name_4")[,1],
-      icf_nih_share = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "nih_share")[,1],
-      icf_name_5 = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "name_5")[,1],
-      icf_nih_first_name = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "first_name")[,1],
-      icf_nih_middle_name = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "middle_name")[,1],
-      icf_nih_last_name = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "last_name")[,1],
-      icf_nih_dob = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "dob")[,1],
-      icf_nih_sex = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "sex")[,1],
-      icf_nih_city = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "city")[,1],
+      p_icf_name_1 = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "name_1")[,1],
+      p_icf_name_2 = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "name_2")[,1],
+      p_icf_name_3 = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "name_3")[,1],
+      p_icf_name_4 = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "name_4")[,1],
+      p_icf_nih_share = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "nih_share")[,1],
+      p_icf_name_5 = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "name_5")[,1],
+      p_icf_nih_first_name = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "first_name")[,1],
+      p_icf_nih_middle_name = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "middle_name")[,1],
+      p_icf_nih_last_name = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "last_name")[,1],
+      p_icf_nih_dob = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "dob")[,1],
+      p_icf_nih_sex = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "sex")[,1],
+      p_icf_nih_city = coalesce_columns(dat_caregiver_cleaned, "icf[0-9]{2}_", "city")[,1],
       .after = eligibility_screen_complete
     ) |> 
     # remove the original un-coalesced variables
     select(-matches("^(harlem|kings)_icf\\d{2}.*")) |> 
     # coalesce prescreening contact form completion indicators
-    mutate(informed_consent_form_parent_complete = coalesce_columns(dat_caregiver_cleaned, ".*subject_information_and_informed.*", "complete"),
+    mutate(informed_consent_form_parent_complete = coalesce_columns(dat_caregiver_cleaned, ".*subject_information_and_informed.*", "complete")[,1],
            .before = p_sw_pause_id) |> 
     # remove the original un-coalesced variables
-    select(-matches("subject_information_and_informed"))
+    select(-matches("subject_information_and_informed")) |> 
+  
+  # rename completion indicators with the p_ prefix
+    rename_with(~ paste0("p_", .x), ends_with("_complete") | starts_with("gf_")) |> 
+    rename(
+      p_wecare_id = wecare_id,
+      p_over_18 = over_18,
+      p_over_12 = over_12
+    ) |> 
+    as_tibble()
+  
+  # remove weird html tag
+  dat_caregiver_cleaned <- dat_caregiver_cleaned |> 
+    mutate(across(everything(), 
+                  ~ifelse(grepl("<!DOCTYPE HTML>", .x), 
+                          NA, 
+                          .x)))
   
   return(dat_caregiver_cleaned)
 }
 
 # Function to merge youth and caregiver data
+merge_caregiver_youth <- function(dat_caregiver_cleaned, dat_youth_cleaned){
+  
+  # merge data
+  dat_merged <- dat_caregiver_cleaned |> 
+    full_join(dat_youth_cleaned, by = c("site_id", "family_id"))
+  
+  # reorder variables for display purposes
+  dat_merged <- dat_merged |> 
+    mutate(p_date_of_enrollment = as_date(p_ps_date),
+           date_of_enrollment = as_date(ps_date)) |> 
+    select(site_id, family_id, p_wecare_id, wecare_id, p_date_of_enrollment, date_of_enrollment, 
+           everything())
+    
+  return(dat_merged)
+}

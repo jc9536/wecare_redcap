@@ -9,7 +9,7 @@ library(tarchetypes) # Load other packages as needed. # nolint
 
 # Set target options:
 tar_option_set(
-  packages = c("tidyverse", "REDCapR"), # packages that your targets need to run
+  packages = c("tidyverse", "REDCapR", "lubridate"), # packages that your targets need to run
   format = "rds" # default storage format
   # Set other options as needed.
 )
@@ -67,6 +67,14 @@ tar_force(
   ),
 
 # 3. Export data ----------------------------------------------------------
+  
+  # Merge caregiver and youth data
+  tar_target(
+    dat_merged,
+    merge_caregiver_youth(dat_caregiver_cleaned, dat_youth_cleaned)
+  ),
+
+# 4. Export data ----------------------------------------------------------
 
   # Export youth data
   tar_target(
@@ -78,5 +86,11 @@ tar_force(
   tar_target(
     export_dat_caregiver_cleaned,
     write_csv(dat_caregiver_cleaned, file.path(box_path, "cleaned/dat_caregiver_cleaned.csv"))
-  )
+  ),
+
+  # Export youth data
+  tar_target(
+    export_dat_merged,
+    write_csv(dat_merged, file.path(box_path, "cleaned/dat_merged.csv"))
+)
 )
