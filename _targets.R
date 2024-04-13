@@ -9,7 +9,7 @@ library(tarchetypes) # Load other packages as needed. # nolint
 
 # Set target options:
 tar_option_set(
-  packages = c("tidyverse", "REDCapR", "lubridate"), # packages that your targets need to run
+  packages = c("tidyverse", "REDCapR", "rlang"), # packages that your targets need to run
   format = "rds" # default storage format
   # Set other options as needed.
 )
@@ -35,8 +35,8 @@ list(
   tar_force(
     dat_youth_raw,
     suppressMessages(redcap_read(
-      redcap_uri = youth_url_qa,
-      token = youth_api_token_qa
+      redcap_uri = youth_url,
+      token = youth_api_token
     )$data),
     force = T
     ),
@@ -45,8 +45,8 @@ list(
 tar_force(
     dat_caregiver_raw,
     suppressMessages(redcap_read(
-      redcap_uri = caregiver_url_qa,
-      token = caregiver_api_token_qa
+      redcap_uri = caregiver_url,
+      token = caregiver_api_token
     )$data),
     force = T
     ),
