@@ -9,7 +9,8 @@ library(tarchetypes) # Load other packages as needed. # nolint
 
 # Set target options:
 tar_option_set(
-  packages = c("tidyverse", "REDCapR", "rlang"), # packages that your targets need to run
+  packages = c("tidyverse", "REDCapR", "rlang", "flextable",
+               "officer", "officedown"), # packages that your targets need to run
   format = "rds" # default storage format
   # Set other options as needed.
 )
@@ -74,6 +75,12 @@ tar_force(
     merge_caregiver_youth(dat_caregiver_cleaned, dat_youth_cleaned)
   ),
 
+  # Process merged data for reporting purposes
+  tar_target(
+    dat_report,
+    process_report_data(dat_merged)
+  ),
+
 # 4. Export data ----------------------------------------------------------
 
   # Export youth data
@@ -82,15 +89,41 @@ tar_force(
     write_csv(dat_youth_cleaned, file.path(box_path, "cleaned/dat_youth_cleaned.csv"))
   ),
 
-  # Export youth data
+  # Export caregiver data
   tar_target(
     export_dat_caregiver_cleaned,
     write_csv(dat_caregiver_cleaned, file.path(box_path, "cleaned/dat_caregiver_cleaned.csv"))
   ),
 
-  # Export youth data
+  # Export merged data
   tar_target(
     export_dat_merged,
     write_csv(dat_merged, file.path(box_path, "cleaned/dat_merged.csv"))
-)
+  ),
+
+  # Export data for reporting
+  tar_target(
+    export_dat_report_cleaned,
+    write_csv(dat_report, file.path(box_path, "cleaned/dat_report.csv"))
+  ),
+
+# 5. Create tables and figures ----------------------------------------------------------
+  tar_target(t_enrollment, tab_enrollment(dat_report)),
+  tar_target(t_weekly_enrollment, tab_weekly_enrollment(dat_report)),
+  tar_target(t_recruitment, tab_recruitment(dat_report)),
+  tar_target(t_assignment, tab_assignment(dat_report)),
+  tar_target(t_trigger_rmp, tab_trigger_rmp(dat_report)),
+  tar_target(t_demo, tab_demo(dat_report)),
+  tar_target(t_monthly_enrollment_preprocessed, tab_monthly_enrollment_preprocess(dat_report)), # intermediate preprocess step
+  tar_target(t_monthly_enrollment, tab_monthly_enrollment(t_monthly_enrollment_preprocessed)),
+  tar_target(p_monthly_enrollment, fig_monthly_enrollment(t_monthly_enrollment_preprocessed)),
+
+# 6. Build report ----------------------------------------------------------
+  
+  # Export data for reporting
+  tar_render(
+    build_report,
+    here::here("inst/progress_report.Rmd")
+  )
+
 )
