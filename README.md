@@ -6,7 +6,7 @@ This project is enabled by the following packages:
 
 - The [`REDCapR`](https://ouhscbbmc.github.io/REDCapR/) package is used to extract data from RedCap and the provided API in each Redcap project (Youth & Caregiver). 
 
-- The [`tidyverse`] packages are used to clean the downloaded data from the RedCap API call and prepare it for reporting.
+- The [`tidyverse`](https://www.tidyverse.org/) packages are used to clean the downloaded data from the RedCap API call and prepare it for reporting.
 
 - The [`targets`](https://books.ropensci.org/targets/) package is used to streamline and automate the data cleaning and reporting process.
 
