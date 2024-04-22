@@ -61,7 +61,7 @@ sapply(dat_t, table)
 dat_t |> group_by(site_id, screen_sex, over_18, cssrs_6a_b, treatment) |> summarise(n = n()) |> View()
 
 # Export randomization table
-write_csv(dat_t, "/Users/michaelfive/Library/CloudStorage/Box-Box/WeCare/Data/docs/random_allocation_production.csv")
+# write_csv(dat_t, "/Users/michaelfive/Library/CloudStorage/Box-Box/WeCare/Data/docs/random_allocation_production.csv")
 #write_csv(dat_t, "/Users/michaelfive/Library/CloudStorage/Box-Box/WeCare/Data/docs/random_allocation_development.csv")
 
 # 2. Test randomization using the redcapAPI package --------
