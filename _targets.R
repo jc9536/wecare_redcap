@@ -122,8 +122,9 @@ tar_force(
   
   # Export data for reporting
   tar_render(
-    build_report,
-    here::here("inst/progress_report.Rmd")
+    name = build_report,
+    path = here::here("inst/progress_report.Rmd"),
+    output_file = here::here("output", "progress_report.docx")
   )
 
 )

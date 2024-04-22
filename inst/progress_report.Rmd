@@ -30,6 +30,7 @@ options(yaml.eval.expr = TRUE)
 
 library(officer)
 library(officedown)
+library(targets)
 # source(here::here("R/utils.R"))
 # source(here::here("R/table_functions.R"))
 ```

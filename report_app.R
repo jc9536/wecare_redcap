@@ -1,12 +1,24 @@
 library(shiny)
 library(shinydashboard)
+library(targets)
 library(officer)
 library(officedown)
+library(here)
 
 ui <- dashboardPage(
   dashboardHeader(title = "WeCare Report"),
   dashboardSidebar(disable = TRUE),
   dashboardBody(
+    tags$head(
+      tags$style(HTML("
+        .center-div {
+          display: flex;
+          justify-content: center;  /* Center horizontally */
+          align-items: center;  /* Center vertically */
+          height: 100vh;  /* Take full height of the viewport */
+        }
+      "))
+    ),
     uiOutput("loginPage"),
     uiOutput("mainUI")
   )
@@ -14,6 +26,7 @@ ui <- dashboardPage(
 
 server <- function(input, output, session) {
   USER <- reactiveValues(loggedIn = FALSE)
+  reportPath <- reactiveVal()  # Initialize reactive value to store report path
   
   observe({
     if (isTruthy(input$btnLogin)) {
@@ -25,34 +38,40 @@ server <- function(input, output, session) {
     }
   })
   
-  
   output$loginPage <- renderUI({
     if (!USER$loggedIn) {
-      tagList(
-        passwordInput("pwd", "Enter password"),
-        actionButton("btnLogin", "Login")
+      div(
+          tagList(
+            passwordInput("pwd", "Enter password"),
+            actionButton("btnLogin", "Login")
+          )
       )
     }
   })
   
   output$mainUI <- renderUI({
     if (USER$loggedIn) {
-      tagList(
-        actionButton("generateReport", "Generate Report"),
-        downloadButton("downloadReport", "Download Report")
+      div(class = "center-div",
+          tagList(
+            actionButton("runWorkflow", "Run Data Workflow"),
+            downloadButton("downloadReport", "Download Report")
+          )
       )
     }
   })
   
-  reportPath <- reactiveVal()
-  observeEvent(input$generateReport, {
-    withProgress({
-      setProgress(message = "Generating report...", value = 0.5)
-      # Assume this function takes some time and finally generates the report
-      reportPath(rmarkdown::render("inst/progress_report.Rmd", output_format = "officedown::rdocx_document"))
+  observeEvent(input$runWorkflow, {
+    withProgress(message = "Running data workflow...", {
+      setProgress(value = 0.1)
+      # Run the targets pipeline
+      targets::tar_make()
+      # After completion, copy the report to a temporary location
+      tempReportPath <- tempfile(fileext = ".docx")
+      file.copy(from = here("output", "progress_report.docx"), to = tempReportPath, overwrite = TRUE)
+      reportPath(tempReportPath)  # Update the reactive value to the new path
       setProgress(value = 1)
-      # Show notification that the report has been successfully generated
-      showNotification("Report has been generated, please download it to your computer.", type = "message")
+      showNotification("Workflow completed successfully. You can now download the report.", 
+                       type = "message", duration = NULL)
     })
   })
   
@@ -61,7 +80,7 @@ server <- function(input, output, session) {
       paste("report-", Sys.Date(), ".docx", sep = "")
     },
     content = function(file) {
-      file.copy(reportPath(), file)
+      file.copy(reportPath(), file)  # Copy from the updated report path
     }
   )
 }
