@@ -226,6 +226,12 @@ process_report_data <- function(dat_merged){
     mutate(contact_form_youth_complete = 
              if_else(wecare_id == "K-F0006-Y-S",
                      2, contact_form_youth_complete)) |> 
+    mutate(ps_hear_more = 
+             if_else(wecare_id == "K-F0006-Y-S",
+                     1, ps_hear_more)) |> 
+    mutate(ps_willing_to_contact = 
+             if_else(wecare_id == "K-F0006-Y-S",
+                     1, ps_willing_to_contact)) |>
     mutate(ps_signature = 
              if_else(wecare_id == "K-F0006-Y-S",
                      "signature_unavailable", ps_signature))

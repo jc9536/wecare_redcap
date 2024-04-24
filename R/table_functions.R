@@ -15,6 +15,8 @@ tab_enrollment <- function(dat){
     summarize(
       n_completed_contact_form = sum((age_group == "12-17" & p_contact_form_parent_complete == 2) | 
                                        (age_group == "18+" & contact_form_youth_complete == 2), na.rm = TRUE),
+      n_passed_contact_form = sum((age_group == "12-17" & p_ps_hear_more == 1 & p_ps_willing_to_contact == 1) |
+                                    (age_group == "18+" & ps_hear_more == 1 & ps_willing_to_contact == 1), na.rm = TRUE),
       n_completed_eligibility_screen = sum(eligibility_screen_complete == 2, na.rm = TRUE),
       n_completed_eligibility_survey = sum(eligibility_survey_complete == 2, na.rm = TRUE),
       # the first field in eligiblity survey is required, so if eligible_visited_ed is not NA, 
@@ -28,6 +30,7 @@ tab_enrollment <- function(dat){
     # Ensure all combinations of site_id and age_group appear in the results
     complete(site_id = c("Harlem", "Kings County"), age_group = c("12-17", "18+"), fill = list(
       n_completed_contact_form = 0, 
+      n_passed_contact_form = 0,
       n_completed_eligibility_screen = 0,
       n_passed_eligibility_screen = 0,
       n_completed_eligibility_survey = 0,
@@ -44,6 +47,7 @@ tab_enrollment <- function(dat){
   # Rename
   names(t_enrollment) <- c("", "Age Group",
                  "Number of youth who completed the contact form",
+                 "Number of youth who passed the screen in the contact form",
                  "Number of youth who completed the eligibility screen",
                  "Number of youth who passed the eligibility screen",
                  "Number of youth who completed the eligibility survey",
