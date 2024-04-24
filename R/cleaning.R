@@ -184,7 +184,7 @@ process_report_data <- function(dat_merged){
     mutate(screen_race_eligible = if_any(c(screen_race_1, screen_race_2, screen_race_3, screen_race_4), 
                                          ~ .x == 1)) |> 
     mutate(completed_survey = if_else(
-      any(!is.na(c_across(starts_with(c("giso_","cssrs_", "st_", "ets_",
+      any(!is.na(c_across(starts_with(c("giso_","cssrs_[0-9]", "st_", "ets_",
                                         "acfs_", "barrier_", "atphs_", "soc_",
                                         "tam_", "pfcs_", "pvp_", "cde_",
                                         "hopeless_", "uppss_", "yrbsa_", "dus_",

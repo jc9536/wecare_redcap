@@ -147,6 +147,9 @@ tab_recruitment <- function(dat){
     summarize(
       n_completed_contact_form = sum((age_group == "12-17" & p_contact_form_parent_complete == 2) | 
                                        (age_group == "18+" & contact_form_youth_complete == 2), na.rm = TRUE),
+      
+      n_passed_contact_form = sum((age_group == "12-17" & p_ps_hear_more == 1 & p_ps_willing_to_contact == 1) |
+                                    (age_group == "18+" & ps_hear_more == 1 & ps_willing_to_contact == 1), na.rm = TRUE),
       # the first field in eligiblity survey is required, so if eligible_visited_ed is not NA, 
       # it means the person passed the eligiblity screen 
       n_passed_eligibility_screen = sum(is.na(eligible_visited_ed) == F, na.rm = TRUE),
@@ -183,6 +186,7 @@ tab_recruitment <- function(dat){
     # Ensure all combinations of site_id and age_group appear in the results
     complete(site_id = c("Harlem", "Kings County"), fill = list(
       n_completed_contact_form = 0, 
+      n_passed_contact_form = 0,
       n_passed_eligibility_screen = 0,
       n_passed_eligibility_survey = 0,
       n_consented = 0,
@@ -217,6 +221,7 @@ tab_recruitment <- function(dat){
   t_recruitment$rowname <- c(
     "",
     "Number of youth who completed the contact form",
+    "Number of youth who passed the screen in the contact form",
     "Number of youth who passed the eligibility screen",
     "Number of youth who passed the eligibility survey",
     "Number of youth who consented",
@@ -245,8 +250,8 @@ tab_recruitment <- function(dat){
   
   t_recruitment <- t_recruitment |> 
     add_row(rowname = "General Recruitment Information", .after = 1) |> 
-    add_row(rowname = "Ineligible Based on the First Screen (Information from the Contact Form)", .after = 6) |> 
-    add_row(rowname = "Ineligible Based on the Second Screen (Information from Youth Eligibility Screen and Survey)", .after = 11)
+    add_row(rowname = "Ineligible Based on the First Screen (Information from the Contact Form)", .after = 7) |> 
+    add_row(rowname = "Ineligible Based on the Second Screen (Information from Youth Eligibility Screen and Survey)", .after = 12)
   
   # Create flextable
   ft_recruitment <- flextable(t_recruitment) |> 
@@ -254,10 +259,10 @@ tab_recruitment <- function(dat){
     width(j = 1, width = 6) |>
     delete_part(part = "header") |>
     hline_top(j = 1:ncol(t_recruitment) , part = "body") |>
-    hline(i = c(1, 6, 11, 21) , part = "body") |> 
+    hline(i = c(1, 7, 12, 22) , part = "body") |> 
     align(align = "center", part = "header") |> 
     align(j = 2:3, align = "center", part = "body") |> 
-    bold(i = c(1, 2, 7, 12), bold = TRUE, part = "body") |> 
+    bold(i = c(1, 2, 8, 13), bold = TRUE, part = "body") |> 
     italic(i = 22, italic = TRUE, part = "body") |> 
     merge_h(i = 1)
   
