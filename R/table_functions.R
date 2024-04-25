@@ -46,14 +46,14 @@ tab_enrollment <- function(dat){
   
   # Rename
   names(t_enrollment) <- c("", "Age Group",
-                 "Number of youth who completed the contact form",
-                 "Number of youth who passed the screen in the contact form",
+                 "Number of families approached, SW completed contact form",
+                 "Number of families who passed the screen in the contact form",
                  "Number of youth who completed the eligibility screen",
                  "Number of youth who passed the eligibility screen",
                  "Number of youth who completed the eligibility survey",
                  "Number of youth who passed the eligibility survey",
-                 "Number of youth who consented",
-                 "Percent of youth who consented among those who completed the contact form",
+                 "Number of families who consented",
+                 "Percent of families who consented among those who completed the contact form",
                  "Percent of youth who consented among those who passed the eligibility survey")
   
   # Transpose
@@ -224,19 +224,19 @@ tab_recruitment <- function(dat){
   # Rename
   t_recruitment$rowname <- c(
     "",
-    "Number of youth who completed the contact form",
-    "Number of youth who passed the screen in the contact form",
+    "Number of families approached, SW completed contact form",
+    "Number of families who passed the screen in the contact form",
     "Number of youth who passed the eligibility screen",
     "Number of youth who passed the eligibility survey",
-    "Number of youth who consented",
+    "Number of families who consented",
     
     # "Number of youth who DID NOT complete the contact form",
     # "Number of youth who DID NOT pass the eligibility screen",
     # "Number of youth who DID NOT pass the eligibility survey",
     # "Number of youth who DID NOT consent",
     
-    "Number of youth who were NOT willing to hear more about the study",
-    "Number of youth who were NOT willing to be contacted",
+    "Number of families who were NOT willing to hear more about the study",
+    "Number of families who were NOT willing to be contacted",
     "Number of caregivers (with youth aged 12-17) who DID NOT consent in the contact form",
     "Number of youth aged 18+ who DID NOT consent in the contact form",
     
@@ -249,7 +249,7 @@ tab_recruitment <- function(dat){
     "Number of youth who were currently enrolled in WeCare",
     "Number of youth who had another youth family member in WeCare",
     "Number of youth who DID NOT the minimal risk criteria",
-    "Total number of youth approached"
+    "Total number of families approached"
   )
   
   t_recruitment <- t_recruitment |> 
