@@ -13,6 +13,7 @@ tab_enrollment <- function(dat){
     group_by(site_id, age_group) |>
     # Use summarise() to compute summaries specific to each group
     summarize(
+      n_approached = length(unique(family_id)), 
       n_completed_contact_form = sum((age_group == "12-17" & p_contact_form_parent_complete == 2) | 
                                        (age_group == "18+" & contact_form_youth_complete == 2), na.rm = TRUE),
       n_passed_contact_form = sum((age_group == "12-17" & p_ps_hear_more == 1 & p_ps_willing_to_contact == 1) |
@@ -22,13 +23,15 @@ tab_enrollment <- function(dat){
       # the first field in eligiblity survey is required, so if eligible_visited_ed is not NA, 
       # it means the person passed the eligiblity screen 
       n_passed_eligibility_screen = sum(is.na(eligible_visited_ed) == F, na.rm = TRUE),
-      n_passed_eligibility_survey = sum(meet_minimal_risk == 1, na.rm = TRUE),
+      n_passed_eligibility_survey = sum(eligibility_survey_complete == 2, na.rm = TRUE),
       n_consented = sum((age_group == "12-17" & p_informed_consent_form_parent_complete == 2) | 
                           (age_group == "18+" & informed_consent_form_youth_complete == 2), na.rm = TRUE),
       .groups = 'drop'  # Drop the grouping once summarization is done
     ) |> 
+    filter(!is.na(age_group)) |> 
     # Ensure all combinations of site_id and age_group appear in the results
     complete(site_id = c("Harlem", "Kings County"), age_group = c("12-17", "18+"), fill = list(
+      n_approached = 0,
       n_completed_contact_form = 0, 
       n_passed_contact_form = 0,
       n_completed_eligibility_screen = 0,
@@ -46,6 +49,7 @@ tab_enrollment <- function(dat){
   
   # Rename
   names(t_enrollment) <- c("", "Age Group",
+                 "Number of families approached, IDs assigned",
                  "Number of families approached, SW completed contact form",
                  "Number of families who passed the screen in the contact form",
                  "Number of youth who completed the eligibility screen",
@@ -82,7 +86,8 @@ tab_weekly_enrollment <- function(dat){
 
   t_weekly_enrollment <- dat |>
     mutate(date_of_enrollment_all = coalesce(p_date_of_enrollment, date_of_enrollment, screen_doe)) |>
-    mutate(date_of_enrollment_range = get_week_range(date_of_enrollment_all))
+    mutate(date_of_enrollment_range = get_week_range(date_of_enrollment_all)) |> 
+    filter(date_of_enrollment_range != "NA ~ NA")
   
   t_weekly_enrollment <- t_weekly_enrollment |> 
     # Ensure grouping is done by both site_id and the new age_group column
@@ -184,7 +189,7 @@ tab_recruitment <- function(dat){
       n_screen_self_repeat = sum(screen_self_repeat == 1, na.rm = T),
       n_screen_sibling_repeat = sum(screen_sibling_repeat == 2, na.rm = T),
       n_not_meet_minimal_risk = sum(!meet_minimal_risk, na.rm = T),
-      n_total = n(),
+      n_total = length(unique(family_id)),
       .groups = 'drop'  # Drop the grouping once summarization is done
     ) |> 
     # Ensure all combinations of site_id and age_group appear in the results
@@ -249,7 +254,7 @@ tab_recruitment <- function(dat){
     "Number of youth who were currently enrolled in WeCare",
     "Number of youth who had another youth family member in WeCare",
     "Number of youth who DID NOT the minimal risk criteria",
-    "Total number of families approached"
+    "Total number of families approached, IDs assigned"
   )
   
   t_recruitment <- t_recruitment |> 

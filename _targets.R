@@ -22,7 +22,11 @@ options(clustermq.scheduler = "multicore")
 # Install packages {{future}}, {{future.callr}}, and {{future.batchtools}} to allow use_targets() to configure tar_make_future() options.
 
 # Run the R scripts in the R/ folder with your custom functions:
-tar_source()
+source(here::here("R/cleaning.R"))
+source(here::here("R/functions.R"))
+source(here::here("R/redcap_api.R"))
+source(here::here("R/table_functions.R"))
+source(here::here("R/utils.R"))
 
 # Box path (please change if you need to run the pipeline locally)
 box_path = "/Users/michaelfive/Library/CloudStorage/Box-Box/WeCare/Data"

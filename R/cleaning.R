@@ -158,7 +158,7 @@ merge_caregiver_youth <- function(dat_caregiver_cleaned, dat_youth_cleaned){
   
   # merge data (no caregiver data unless youth data is available)
   dat_merged <- dat_caregiver_cleaned |> 
-    right_join(dat_youth_cleaned, by = c("site_id", "family_id"))
+    full_join(dat_youth_cleaned, by = c("site_id", "family_id"))
   
   # reorder variables for display purposes
   dat_merged <- dat_merged |> 
@@ -176,8 +176,8 @@ process_report_data <- function(dat_merged){
   dat_report <- dat_merged |> 
     # Create a new column to categorize age group
     mutate(age_group = case_when(
-      screen_age_group == 0 ~ "12-17",
-      screen_age_group == 1 ~ "18+",
+      p_over_18 == 0 | over_18 == 0 ~ "12-17",
+      p_over_18 == 1 | over_18 == 1 ~ "18+",
       TRUE ~ NA_character_  # Handles cases that do not fit either category
     )) |> 
     rowwise() |> 
@@ -218,22 +218,22 @@ process_report_data <- function(dat_merged){
   
   dat_report <- dat_report |> 
     mutate(p_informed_consent_form_parent_complete = 
-             if_else(p_wecare_id == "K-F0005-C-S", 
+             if_else(!is.na(wecare_id) & p_wecare_id == "K-F0005-C-S", 
                      0, p_informed_consent_form_parent_complete)) |> 
     mutate(age_group = 
-             if_else(wecare_id == "K-F0006-Y-S",
+             if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
                      "18+", age_group)) |> 
     mutate(contact_form_youth_complete = 
-             if_else(wecare_id == "K-F0006-Y-S",
+             if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
                      2, contact_form_youth_complete)) |> 
     mutate(ps_hear_more = 
-             if_else(wecare_id == "K-F0006-Y-S",
+             if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
                      1, ps_hear_more)) |> 
     mutate(ps_willing_to_contact = 
-             if_else(wecare_id == "K-F0006-Y-S",
+             if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
                      1, ps_willing_to_contact)) |>
     mutate(ps_signature = 
-             if_else(wecare_id == "K-F0006-Y-S",
+             if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
                      "signature_unavailable", ps_signature))
   
   return(dat_report)
