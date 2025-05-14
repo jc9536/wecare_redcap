@@ -57,58 +57,154 @@ tar_force(
     ),
 
 
-# 2. Cleaning data --------------------------------------------------------
+# 2. Follow-up pulls (separate events) -----------------------------------
 
-  # Clean youth data
+tar_force(
+  dat_youth_3m_raw,
+  suppressMessages(redcap_read(
+    redcap_uri = youth_fu_url,
+    token      = youth_fu_api_token,
+    events     = c("baseline_visit_arm_1", "3_month_followup_arm_1")
+  )$data),
+  force = TRUE
+),
+
+tar_force(
+  dat_youth_6m_raw,
+  suppressMessages(redcap_read(
+    redcap_uri = youth_fu_url,
+    token      = youth_fu_api_token,
+    events     = c("baseline_visit_arm_1", "6_month_followup_arm_1")
+  )$data),
+  force = TRUE
+),
+
+tar_force(
+  dat_caregiver_3m_raw,
+  suppressMessages(redcap_read(
+    redcap_uri = caregiver_fu_url,
+    token      = caregiver_fu_api_token,
+    events     = "3_month_caregiver_arm_1"
+  )$data),
+  force = TRUE
+),
+
+tar_force(
+  dat_caregiver_6m_raw,
+  suppressMessages(redcap_read(
+    redcap_uri = caregiver_fu_url,
+    token      = caregiver_fu_api_token,
+    events     = "6_month_caregiver_arm_1"
+  )$data),
+  force = TRUE
+),
+
+# 3. Cleaning -------------------------------------------------------------
+
   tar_target(
     dat_youth_cleaned,
     clean_youth(dat_youth_raw)
   ),
-
-  # Clean caregiver data
+  
   tar_target(
     dat_caregiver_cleaned,
     clean_caregiver(dat_caregiver_raw)
   ),
-
-# 3. Export data ----------------------------------------------------------
   
-  # Merge caregiver and youth data
   tar_target(
-    dat_merged,
-    merge_caregiver_youth(dat_caregiver_cleaned, dat_youth_cleaned)
+    dat_youth_3m_cleaned,
+    clean_youth_3m_followup(dat_youth_3m_raw)
+  ),
+  
+  tar_target(
+    dat_youth_6m_cleaned,
+    clean_youth_6m_followup(dat_youth_6m_raw)
+  ),
+  
+  tar_target(
+    dat_caregiver_3m_cleaned,
+    clean_caregiver_followup(dat_caregiver_3m_raw)
+  ),
+  
+  tar_target(
+    dat_caregiver_6m_cleaned,
+    clean_caregiver_followup(dat_caregiver_6m_raw)
   ),
 
-  # Process merged data for reporting purposes
+# 5. Follow-up merges ----------------------------------------------------
+
+  tar_target(
+    dat_youth_merged,
+    merge_youth_all_events(dat_youth_cleaned, dat_youth_3m_cleaned, dat_youth_6m_cleaned)
+  ),
+
+  tar_target(
+    dat_caregiver_merged,
+    merge_caregiver_all_events(dat_caregiver_cleaned, dat_caregiver_3m_cleaned, dat_caregiver_6m_cleaned)
+  ),
+  
+  tar_target(
+    dat_merged,
+    merge_caregiver_youth(dat_caregiver_merged, dat_youth_merged)
+  ),
+
   tar_target(
     dat_report,
     process_report_data(dat_merged)
   ),
 
-# 4. Export data ----------------------------------------------------------
+# 6. Export all cleaned CSVs ---------------------------------------------
 
-  # Export youth data
-  tar_target(
-    export_dat_youth_cleaned,
-    write_csv(dat_youth_cleaned, file.path(box_path, "cleaned/dat_youth_cleaned.csv"))
-  ),
-
-  # Export caregiver data
-  tar_target(
-    export_dat_caregiver_cleaned,
-    write_csv(dat_caregiver_cleaned, file.path(box_path, "cleaned/dat_caregiver_cleaned.csv"))
-  ),
-
-  # Export merged data
+  # Baseline
+  # tar_target(
+  #   export_dat_youth_cleaned,
+  #   write_csv(dat_youth_cleaned, file.path(box_path, "cleaned/dat_youth_cleaned.csv"))
+  # ),
+  
+  # tar_target(
+  #   export_dat_caregiver_cleaned,
+  #   write_csv(dat_caregiver_cleaned, file.path(box_path, "cleaned/dat_caregiver_cleaned.csv"))
+  # ),
+  
   tar_target(
     export_dat_merged,
     write_csv(dat_merged, file.path(box_path, "cleaned/dat_merged.csv"))
   ),
-
-  # Export data for reporting
+  
   tar_target(
     export_dat_report_cleaned,
     write_csv(dat_report, file.path(box_path, "cleaned/dat_report.csv"))
+  ),
+  
+  # Follow-up
+  # tar_target(
+  #   export_dat_youth_3m_cleaned,
+  #   write_csv(dat_youth_3m_cleaned, file.path(box_path, "cleaned/dat_youth_3month_cleaned.csv"))
+  # ),
+  
+  # tar_target(
+  #   export_dat_youth_6m_cleaned,
+  #   write_csv(dat_youth_6m_cleaned, file.path(box_path, "cleaned/dat_youth_6month_cleaned.csv"))
+  # ),
+  
+  # tar_target(
+  #   export_dat_caregiver_3m_cleaned,
+  #   write_csv(dat_caregiver_3m_cleaned, file.path(box_path, "cleaned/dat_caregiver_3month_cleaned.csv"))
+  # ),
+  
+  # tar_target(
+  #   export_dat_caregiver_6m_cleaned,
+  #   write_csv(dat_caregiver_6m_cleaned, file.path(box_path, "cleaned/dat_caregiver_6month_cleaned.csv"))
+  # ),
+  
+  tar_target(
+    export_dat_youth_merged,
+    write_csv(dat_youth_merged, file.path(box_path, "cleaned/dat_youth_merged.csv"))
+  ),
+  
+  tar_target(
+    export_dat_caregiver_merged,
+    write_csv(dat_caregiver_merged, file.path(box_path, "cleaned/dat_caregiver_merged.csv"))
   ),
 
 # 5. Create tables and figures ----------------------------------------------------------

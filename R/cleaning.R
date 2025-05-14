@@ -12,12 +12,12 @@ clean_youth <- function(dat_youth_raw){
   # coalesce pre-ICF variables
   dat_youth_cleaned <- dat_youth_cleaned |> 
     mutate(
-      ps_hear_more = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "hear_more")|> pull(1),
-      ps_willing_to_contact = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "willing_to_contact")|> pull(1),
-      ps_decline_reason = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "decline_reason")|> pull(1),
-      ps_youth_name = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "youth_name")|> pull(1),
-      ps_signature = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "signature")|> pull(1),
-      ps_date = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "date")|> pull(1),
+      ps_hear_more = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "hear_more") |> pull(1),
+      ps_willing_to_contact = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "willing_to_contact") |> pull(1),
+      ps_decline_reason = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "decline_reason") |> pull(1),
+      ps_youth_name = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "youth_name") |> pull(1),
+      ps_signature = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "signature") |> pull(1),
+      ps_date = coalesce_columns(dat_youth_cleaned, "ps[0-9]{2}y_", "date") |> pull(1),
       .after = initial_questions_complete
     ) |> 
     # remove the original un-coalesced variables
@@ -92,13 +92,7 @@ clean_caregiver <- function(dat_caregiver_raw){
     select(-matches("prescreening_contact_form"))
   
   # rename icf18 participant name fields so that the same suffix is matched across all icfs
-  # _1: Caregiver: I voluntarily agree to participate in this study.
-  # _2: Caregiver: I voluntarily agree for my child to participate in this study.
-  # _3: Youth: I voluntarily agree to participate in this study.
-  # _4: Person obtaining consent name
-  # _5: NIH data sharing consent caregiver name
   dat_caregiver_cleaned <- dat_caregiver_cleaned |> 
-    # rename new = old
     rename(
       harlem_icf18_name_5 = harlem_icf18_name_3,
       harlem_icf18_name_4 = harlem_icf18_name_2,
@@ -140,17 +134,184 @@ clean_caregiver <- function(dat_caregiver_raw){
            .before = p_sw_pause_id) |> 
     # remove the original un-coalesced variables
     select(-matches("subject_information_and_informed")) |> 
-  
-  # rename completion indicators with the p_ prefix
+    
+    # rename completion indicators with the p_ prefix
     rename_with(~ paste0("p_", .x), ends_with("_complete") | starts_with("gf_")) |> 
     rename(
       p_wecare_id = wecare_id,
-      p_over_18 = over_18,
-      p_over_12 = over_12
+      p_over_18   = over_18,
+      p_over_12   = over_12
     ) |> 
     as_tibble()
   
   return(dat_caregiver_cleaned)
+}
+
+#’ Clean caregiver follow-up data (3- & 6-month)
+#’
+#’ Adds every baseline-only field as NA so that
+#’ clean_caregiver()’s coalesce() and rename() calls never error.
+clean_caregiver_followup <- function(dat_caregiver_raw) {
+  dat_caregiver_raw %>%
+    mutate(
+      # language coalescing
+      p_screen_language_harlem    = NA_character_,
+      p_screen_language_kings     = NA_character_,
+      # positioning helpers
+      initial_questions_complete  = NA,
+      eligibility_screen_complete = NA,
+      wecare_id                   = NA,
+      p_sw_pause_id               = NA,
+      over_18                     = NA,
+      over_12                     = NA, 
+      p_first_name                = NA_character_,
+      # ICF-rename source cols
+      harlem_icf18_name_2         = NA_character_,
+      harlem_icf18_name_3         = NA_character_,
+      kings_icf18_name_2          = NA_character_,
+      kings_icf18_name_3          = NA_character_,
+      harlem_icf18_name_2_spa     = NA_character_,
+      harlem_icf18_name_3_spa     = NA_character_,
+      kings_icf18_name_2_spa      = NA_character_,
+      kings_icf18_name_3_spa      = NA_character_,
+      harlem_icf18_name_2_fre     = NA_character_,
+      harlem_icf18_name_3_fre     = NA_character_,
+      kings_icf18_name_2_hai      = NA_character_,
+      kings_icf18_name_3_hai      = NA_character_
+    ) %>%
+    clean_caregiver()
+}
+
+# Clean 3-month youth follow-up
+clean_youth_3m_followup <- function(dat_youth_raw) {
+  library(dplyr)
+  library(janitor)
+  
+  df <- dat_youth_raw %>% clean_names()
+  
+  # 1) Baseline: only keep participant_id
+  baseline <- df %>%
+    filter(redcap_event_name == "baseline_visit_arm_1") %>%
+    select(participant_id) %>%
+    distinct()
+  
+  # 2) 3-month follow-up
+  followup_3m <- df %>%
+    filter(redcap_event_name == "3_month_followup_arm_1") %>%
+    filter(follow_visitstatus_3m == 1)
+  
+  # 3) Merge on participant_id only
+  merged <- inner_join(baseline, followup_3m, by = "participant_id") %>%
+    select(participant_id, matches("_3m$|_3m_"))
+  
+  return(merged)
+}
+
+# Clean 6-month youth follow-up
+clean_youth_6m_followup <- function(dat_youth_raw) {
+  library(dplyr)
+  library(janitor)
+  
+  df <- dat_youth_raw %>% clean_names()
+  
+  # 1) Baseline: only keep participant_id
+  baseline <- df %>%
+    filter(redcap_event_name == "baseline_visit_arm_1") %>%
+    select(participant_id) %>%
+    distinct()
+  
+  # 2) 6-month follow-up
+  followup_6m <- df %>%
+    filter(redcap_event_name == "6_month_followup_arm_1") %>%
+    filter(follow_visitstatus_6m == 1)
+  
+  # 3) Merge on participant_id only
+  merged <- inner_join(baseline, followup_6m, by = "participant_id") %>%
+    select(participant_id, matches("_6m$|_6m_"))
+  
+  return(merged)
+}
+
+#’ Merge youth baseline + 3m + 6m into one wide table with presence flags
+#’
+#’ @param dat_base   cleaned baseline youth data (must have participant_id)
+#’ @param dat_3m     cleaned 3-month follow-up youth data (must have participant_id)
+#’ @param dat_6m     cleaned 6-month follow-up youth data (must have participant_id)
+#’ @return one data.frame with all columns side-by-side, key = participant_id,
+#’   plus i_youth_baseline, i_youth_3m, i_youth_6m (0/1)
+merge_youth_all_events <- function(dat_base, dat_3m, dat_6m) {
+  library(dplyr)
+  
+  # Add presence flags
+  base_tag  <- dat_base %>% mutate(i_youth_baseline = 1L)
+  three_tag <- dat_3m    %>% mutate(i_youth_3m       = 1L)
+  six_tag   <- dat_6m    %>% mutate(i_youth_6m       = 1L)
+  
+  merged <- full_join(base_tag, three_tag, by = "participant_id") %>%
+    full_join(six_tag, by = "participant_id") %>%
+    mutate(
+      i_youth_baseline = replace_na(i_youth_baseline, 0L),
+      i_youth_3m       = replace_na(i_youth_3m, 0L),
+      i_youth_6m       = replace_na(i_youth_6m, 0L)
+    )
+  return(merged)
+}
+
+
+#’ Merge caregiver baseline + 3m + 6m into one wide table with presence flags
+#’
+#’ @param dat_base   cleaned baseline caregiver data (must have p_wecare_id)
+#’ @param dat_3m     cleaned 3-month follow-up caregiver data (must have caregiver_id_3m)
+#’ @param dat_6m     cleaned 6-month follow-up caregiver data (must have caregiver_id_3m)
+#’ @return one data.frame with all columns side-by-side, key = p_wecare_id,
+#’   plus i_caregiver_baseline, i_caregiver_3m, i_caregiver_6m (0/1)
+merge_caregiver_all_events <- function(dat_base, dat_3m, dat_6m) {
+  library(dplyr)
+  
+  dedupe_by_fewest_nas <- function(df, key) {
+    df %>%
+      mutate(na_count = rowSums(is.na(select(., -all_of(key))))) %>%
+      group_by(across(all_of(key))) %>%
+      slice_min(na_count, with_ties = FALSE) %>%
+      ungroup() %>%
+      select(-na_count)
+  }
+  
+  # Baseline (keep all baseline variables)
+  base_tag <- dat_base %>%
+    mutate(p_wecare_id = as.character(p_wecare_id),
+           i_caregiver_baseline = 1L) %>%
+    dedupe_by_fewest_nas("p_wecare_id")
+  
+  # 3-month (keep only _3m columns)
+  three_tag <- dat_3m %>%
+    mutate(caregiver_id_3m = as.character(caregiver_id_3m),
+           i_caregiver_3m  = 1L) %>%
+    select(-any_of("p_wecare_id")) %>%
+    rename(p_wecare_id = caregiver_id_3m) %>%
+    dedupe_by_fewest_nas("p_wecare_id") %>%
+    select(p_wecare_id, i_caregiver_3m, matches("_3m$|_3m_"))
+  
+  # 6-month (keep only _6m columns)
+  six_tag <- dat_6m %>%
+    mutate(caregiver_id_3m = as.character(caregiver_id_3m),
+           i_caregiver_6m  = 1L) %>%
+    select(-any_of("p_wecare_id")) %>%
+    rename(p_wecare_id = caregiver_id_3m) %>%
+    dedupe_by_fewest_nas("p_wecare_id") %>%
+    select(p_wecare_id, i_caregiver_6m, matches("_6m$|_6m_"))
+  
+  # Merge: baseline + selected follow-up columns
+  merged <- base_tag %>%
+    full_join(three_tag, by = "p_wecare_id") %>%
+    full_join(six_tag,   by = "p_wecare_id") %>%
+    mutate(
+      i_caregiver_baseline = replace_na(i_caregiver_baseline, 0L),
+      i_caregiver_3m       = replace_na(i_caregiver_3m, 0L),
+      i_caregiver_6m       = replace_na(i_caregiver_6m, 0L)
+    )
+  
+  return(merged)
 }
 
 # Function to merge youth and caregiver data
@@ -166,7 +327,7 @@ merge_caregiver_youth <- function(dat_caregiver_cleaned, dat_youth_cleaned){
            date_of_enrollment = as_date(ps_date)) |> 
     select(site_id, family_id, wecare_id, p_wecare_id, date_of_enrollment, p_date_of_enrollment,
            everything())
-    
+  
   return(dat_merged)
 }
 
@@ -178,7 +339,7 @@ process_report_data <- function(dat_merged){
     mutate(age_group = case_when(
       p_over_18 == 0 | over_18 == 0 ~ "12-17",
       p_over_18 == 1 | over_18 == 1 ~ "18+",
-      TRUE ~ NA_character_  # Handles cases that do not fit either category
+      TRUE ~ NA_character_
     )) |> 
     rowwise() |> 
     mutate(screen_race_eligible = if_any(c(screen_race_1, screen_race_2, screen_race_3, screen_race_4), 
@@ -213,9 +374,6 @@ process_report_data <- function(dat_merged){
     )
   
   # Manual fixes due to redcap entry error
-  # Check this box file for a complete list and description
-  # https://nyu.box.com/s/8vj7nrljzxsg7s8z68ilm80vgm2bey2m
-  
   dat_report <- dat_report |> 
     mutate(p_informed_consent_form_parent_complete = 
              if_else(!is.na(wecare_id) & p_wecare_id == "K-F0005-C-S", 
@@ -231,10 +389,14 @@ process_report_data <- function(dat_merged){
                      1, ps_hear_more)) |> 
     mutate(ps_willing_to_contact = 
              if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
-                     1, ps_willing_to_contact)) |>
+                     1, ps_willing_to_contact)) |> 
     mutate(ps_signature = 
              if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
-                     "signature_unavailable", ps_signature))
+                     "signature_unavailable", ps_signature)) |>
+    
+    # ✅ New fix: manually set site_id for H-F0167-C-S
+    mutate(site_id = if_else(!is.na(p_wecare_id) & p_wecare_id == "H-F0167-C-S", 
+                             "Harlem", site_id))
   
   return(dat_report)
 }
