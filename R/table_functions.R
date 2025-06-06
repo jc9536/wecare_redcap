@@ -609,33 +609,50 @@ tab_monthly_enrollment_preprocess <- function(dat){
   return(t_monthly_enrollment)
 }
 
-tab_monthly_enrollment <- function(t_monthly_enrollment){
+tab_monthly_enrollment <- function(t_monthly_enrollment) {
+  # Get the column names dynamically
+  col_names <- names(t_monthly_enrollment)
+  n_cols <- length(col_names)
   
-  ft_monthly_enrollment <- t_monthly_enrollment
+  # Create one row of NA for each YEAR label
+  year_labels <- c("YEAR 1 (in grant cycle)",
+                   "YEAR 2 (in grant cycle)",
+                   "YEAR 3 (in grant cycle)",
+                   "YEAR 4 (in grant cycle)",
+                   "YEAR 5 (in grant cycle)")
   
-  ft_monthly_enrollment <- ft_monthly_enrollment |> 
-    add_row(month_year_of_enrollment = "YEAR 1 (in grant cycle)", .before = 1) |> 
-    add_row(month_year_of_enrollment = "YEAR 2 (in grant cycle)", .after = 10) |> 
-    add_row(month_year_of_enrollment = "YEAR 3 (in grant cycle)", .after = 23) |> 
-    add_row(month_year_of_enrollment = "YEAR 4 (in grant cycle)", .after = 36) |> 
-    add_row(month_year_of_enrollment = "YEAR 5 (in grant cycle)", .after = 49)
+  year_rows <- lapply(year_labels, function(label) {
+    row <- as.list(rep(NA, n_cols))
+    row[[1]] <- label  # Insert label in first column
+    row
+  }) |> 
+    purrr::map_dfr(~ setNames(.x, col_names))  # Combine and name columns
   
-  # Rename
-  names(ft_monthly_enrollment) <- c("Monthly Projection", "Total Target", "Total Actual",
-                                    "Harlem Actual", "Kings County Actual")
+  # Insert rows after specified indices
+  split_indices <- c(0, 10, 23, 36, 49)
+  sections <- list()
   
-  # Create flextable
-  ft_monthly_enrollment <- flextable(ft_monthly_enrollment) |> 
+  for (i in seq_along(split_indices)) {
+    start <- split_indices[i] + 1
+    end <- if (i == length(split_indices)) nrow(t_monthly_enrollment) else split_indices[i + 1]
+    chunk <- t_monthly_enrollment[start:end, , drop = FALSE]
+    sections[[length(sections) + 1]] <- year_rows[i, ]
+    sections[[length(sections) + 1]] <- chunk
+  }
+  
+  ft_monthly_enrollment <- bind_rows(sections)
+  
+  # Build flextable
+  ft_monthly_enrollment <- flextable(ft_monthly_enrollment) |>
     width(width = 1) |>
     width(j = 1, width = 2) |>
-    align(j = 1:5, align = "center", part = "body") |> 
-    align(j = 1:5, align = "center", part = "header") |> 
-    bold(i = 1, bold = TRUE, part = "header") |> 
-    bold(i = c(1, 11, 24, 37, 50), bold = TRUE, part = "body") |> 
-    hline(i = c(10, 23, 36, 49) , part = "body")
+    align(j = 1:n_cols, align = "center", part = "body") |>
+    align(j = 1:n_cols, align = "center", part = "header") |>
+    bold(i = 1, bold = TRUE, part = "header") |>
+    bold(i = seq(2, by = 2, length.out = 5), bold = TRUE, part = "body") |>
+    hline(i = seq(3, by = 2, length.out = 4), part = "body")  # Draw lines below each section
   
   return(ft_monthly_enrollment)
-  
 }
 
 # -------- Figure 1: Enrollment Graph: Projected vs. Actual by Time (cumulative over time) --------

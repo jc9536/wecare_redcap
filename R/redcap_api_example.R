@@ -9,9 +9,9 @@
 # caregiver_api_token = ""
 
 # Redcap API for Wecare (Youth) Follow Up
-# youth_fu_url = ""https://xxx/xxx/api/"
+# youth_fu_url = "https://xxx/xxx/api/"
 # youth_fu_api_token = ""
 
-# # Redcap API for Wecare (Caregiver) Follow Up
-# caregiver_fu_url = ""https://xxx/xxx/api/"
+# Redcap API for Wecare (Caregiver) Follow Up
+# caregiver_fu_url = " https://xxx/xxx/api/"
 # caregiver_fu_api_token = ""

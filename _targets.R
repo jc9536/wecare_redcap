@@ -29,7 +29,7 @@ source(here::here("R/table_functions.R"))
 source(here::here("R/utils.R"))
 
 # Box path (please change if you need to run the pipeline locally)
-box_path <- "C:/Users/Ashleigh Aviles/Box/WeCare/Data"
+box_path <- "/Users/jaimiechin/Library/CloudStorage/Box-Box"
 
 # Replace the target list below with your own:
 list(
