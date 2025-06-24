@@ -332,71 +332,79 @@ merge_caregiver_youth <- function(dat_caregiver_cleaned, dat_youth_cleaned){
 }
 
 # Function to process merged data for reporting purposes
-process_report_data <- function(dat_merged){
+process_report_data <- function(dat_merged) {
   
-  dat_report <- dat_merged |> 
+  # Identify survey columns ending in "_b" and starting with selected prefixes, and are numeric
+  survey_cols <- dat_merged |>
+    select(matches("^(giso_|cssrs_|st_|ets_|acfs_|barrier_|atphs_|soc_|tam_|pfcs_|pvp_|cde_|hopeless_|uppss_|yrbsa_|dus_|se_|pet_|pil_|cdef_|ibelong_|sc_|joy_).*_b$")) |>
+    select(where(is.numeric)) |>
+    names()
+  
+  dat_report <- dat_merged |>
     # Create a new column to categorize age group
     mutate(age_group = case_when(
       p_over_18 == 0 | over_18 == 0 ~ "12-17",
       p_over_18 == 1 | over_18 == 1 ~ "18+",
       TRUE ~ NA_character_
-    )) |> 
-    rowwise() |> 
-    mutate(screen_race_eligible = if_any(c(screen_race_1, screen_race_2, screen_race_3, screen_race_4), 
-                                         ~ .x == 1)) |> 
-    mutate(completed_survey = if_else(
-      any(!is.na(c_across(starts_with(c("giso_","cssrs_[0-9]", "st_", "ets_",
-                                        "acfs_", "barrier_", "atphs_", "soc_",
-                                        "tam_", "pfcs_", "pvp_", "cde_",
-                                        "hopeless_", "uppss_", "yrbsa_", "dus_",
-                                        "se_", "pet_", "pil_", "cdef_",
-                                        "ibelong_", "sc_", "joy_")) &
-                            ends_with("_b")
-      ))),
-      1, 0
-    )) |> 
-    ungroup() |>
-    mutate(site_id = if_else(site_id == "H", "Harlem", "Kings County")) |> 
-    mutate(treatment = if_else(treatment == 1, "Treatment", "Control")) |> 
+    )) |>
+    rowwise() |>
     mutate(
+      screen_race_eligible = if_any(
+        c(screen_race_1, screen_race_2, screen_race_3, screen_race_4),
+        ~ .x == 1
+      )
+    ) |>
+    ungroup() |>
+    mutate(
+      completed_survey = if_else(
+        rowSums(!is.na(across(all_of(survey_cols)))) > 0,
+        1, 0
+      )
+    ) |>
+    mutate(
+      site_id = if_else(site_id == "H", "Harlem", "Kings County"),
+      treatment = if_else(treatment == 1, "Treatment", "Control"),
       meet_minimal_risk = if_else(
-        eligible_visited_ed == 1 | 
-          eligible_hospitalized == 1 | 
-          eligible_taken_med == 1 | 
-          eligible_received_therapy == 1 | 
-          eligible_sought_counseling == 1 | 
-          (eligible_anxiety_1 + eligible_anxiety_2 >= 4) | 
-          (eligible_depress_1 + eligible_depress_2 >= 4) | 
-          (eligible_sch_connect_1 < 3 | eligible_sch_connect_2 < 3) | 
-          eligible_self_harm > 0 | 
+        eligible_visited_ed == 1 |
+          eligible_hospitalized == 1 |
+          eligible_taken_med == 1 |
+          eligible_received_therapy == 1 |
+          eligible_sought_counseling == 1 |
+          (eligible_anxiety_1 + eligible_anxiety_2 >= 4) |
+          (eligible_depress_1 + eligible_depress_2 >= 4) |
+          (eligible_sch_connect_1 < 3 | eligible_sch_connect_2 < 3) |
+          eligible_self_harm > 0 |
           eligible_sleep_problem_1 > 1,
-        1, 0)
+        1, 0
+      )
     )
   
-  # Manual fixes due to redcap entry error
-  dat_report <- dat_report |> 
-    mutate(p_informed_consent_form_parent_complete = 
-             if_else(!is.na(wecare_id) & p_wecare_id == "K-F0005-C-S", 
-                     0, p_informed_consent_form_parent_complete)) |> 
-    mutate(age_group = 
-             if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
-                     "18+", age_group)) |> 
-    mutate(contact_form_youth_complete = 
-             if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
-                     2, contact_form_youth_complete)) |> 
-    mutate(ps_hear_more = 
-             if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
-                     1, ps_hear_more)) |> 
-    mutate(ps_willing_to_contact = 
-             if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
-                     1, ps_willing_to_contact)) |> 
-    mutate(ps_signature = 
-             if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
-                     "signature_unavailable", ps_signature)) |>
-    
-    # ✅ New fix: manually set site_id for H-F0167-C-S
-    mutate(site_id = if_else(!is.na(p_wecare_id) & p_wecare_id == "H-F0167-C-S", 
-                             "Harlem", site_id))
+  # Manual fixes due to REDCap entry error
+  dat_report <- dat_report |>
+    mutate(
+      p_informed_consent_form_parent_complete =
+        if_else(!is.na(wecare_id) & p_wecare_id == "K-F0005-C-S",
+                0, p_informed_consent_form_parent_complete),
+      age_group =
+        if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
+                "18+", age_group),
+      contact_form_youth_complete =
+        if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
+                2, contact_form_youth_complete),
+      ps_hear_more =
+        if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
+                1, ps_hear_more),
+      ps_willing_to_contact =
+        if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
+                1, ps_willing_to_contact),
+      ps_signature =
+        if_else(!is.na(wecare_id) & wecare_id == "K-F0006-Y-S",
+                "signature_unavailable", ps_signature),
+      
+      # ✅ Set site_id manually for known issue
+      site_id = if_else(!is.na(p_wecare_id) & p_wecare_id == "H-F0167-C-S",
+                        "Harlem", site_id)
+    )
   
   return(dat_report)
 }
